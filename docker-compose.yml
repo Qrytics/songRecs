@@ -1,0 +1,39 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: songrecs_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: songrecs
+      POSTGRES_USER: songrecs
+      POSTGRES_PASSWORD: songrecs_password
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U songrecs']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  bot:
+    build: .
+    container_name: songrecs_bot
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: songrecs
+      PGUSER: songrecs
+      PGPASSWORD: songrecs_password
+
+volumes:
+  postgres_data:
